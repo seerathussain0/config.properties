@@ -4,33 +4,39 @@ on: workflow_dispatch
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     steps:
     - uses: actions/checkout@v4
 
     - name: Setup Toolchain
+      shell: bash
       run: |
         sudo apt update
         sudo apt install -y git build-essential python3 curl
-        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
         sudo apt install -y libssl-dev flex bison
 
     - name: Clone Kernel Source
+      shell: bash
       run: |
         git clone https://android.googlesource.com/kernel/msm -b android-msm-redbull-4.19-android14-qpr3 kernel-source
         cd kernel-source
 
     - name: Integrate KernelSU-Next
+      shell: bash
       run: |
         cd kernel-source
         curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
 
-    - name: Build Kernel
+    - name: Build Kernel with Clang
+      shell: bash
       run: |
         cd kernel-source
         export ARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-gnu-
-        make redbull_defconfig
-        make -j$(nproc)
+        export SUBARCH=arm64
+        export PATH="$PWD/../clang/bin:$PATH"
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ../clang
+        make CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTLD=ld.lld redbull_defconfig
+        make -j$(nproc) CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTLD=ld.lld
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
