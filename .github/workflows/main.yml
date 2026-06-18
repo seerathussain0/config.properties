@@ -33,8 +33,10 @@ jobs:
         cd kernel-source
         export ARCH=arm64
         export SUBARCH=arm64
-        export PATH="$PWD/../clang/bin:$PATH"
+        # Download Google's Clang
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ../clang
+        export PATH="$PWD/../clang/bin:$PATH"
+        # Build
         make CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTLD=ld.lld redbull_defconfig
         make -j$(nproc) CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTLD=ld.lld
 
